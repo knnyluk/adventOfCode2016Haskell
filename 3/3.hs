@@ -3,51 +3,33 @@ import Data.List
 
 main = do
   input <- readFile "input.txt"
-  putStr $ show $ validTrianglesByRow $ lines input
+  let sanitizedRows = linesToIntRows 3 $ lines input
+  putStr $ show $ countValidTriangles $ concat sanitizedRows
   putStrLn " valid triangles by row"
-  putStrLn "sample rows"
-  putStrLn $ show $ sum $ map colToTriangles $ linesToColumns $ lines input
+  putStr $ show $ sum $ map countValidTriangles . (evenMultiples 3) $ transpose sanitizedRows
+  putStrLn " valid triangles by col"
 
-colToTriangles :: [Int] -> Int
-colToTriangles [] = 0
-colToTriangles xs = if areValidSides
-                       then colToTriangles remaining + 1
-                       else colToTriangles remaining
+countValidTriangles :: [Int] -> Int
+countValidTriangles [] = 0
+countValidTriangles xs = if areValidSides
+                            then countValidTriangles remaining + 1
+                            else countValidTriangles remaining
   where
     (sides,remaining) = splitAt 3 xs
     (a:b:c:_) = sort sides
-    areValidSides = 3 == length sides && c < a + b
+    areValidSides = c < a + b
 
-linesToColumns :: [String] -> [[Int]]
-linesToColumns lines = transpose $ linesToIntRows lines
-
-linesToIntRows :: [String] -> [[Int]]
-linesToIntRows = foldr (\l acc -> (map strToInt $ words l):acc)  []
-
-validTrianglesByRow :: [String] -> Int
-validTrianglesByRow strs = length $ filter isValidTriangle $ parseLinesToTriangles strs
-
-data Triangle = Triangle { a :: Int
-                         , b :: Int
-                         , c :: Int } deriving (Show)
-
-isValidTriangle :: Triangle -> Bool
-isValidTriangle t = c t < a t + b t
-
-parseLinesToTriangles :: [String] -> [Triangle]
-parseLinesToTriangles = foldr f []
+linesToIntRows :: Int -> [String] -> [[Int]]
+linesToIntRows rowLength = foldr f []
   where
-    f line acc = if (length $ words line) == 3
-                    then (strToTriangle line):acc
-                    else acc
+    f xs acc = if rowLength == (length $ potentialNums)
+                  then (map strToInt $ potentialNums):acc
+                  else acc
+      where
+        potentialNums = words xs
+        strToInt = (\x -> read x::Int)
 
-strToTriangle :: String -> Triangle
-strToTriangle str = makeTriangle sortedSides
+evenMultiples :: Int -> [a] -> [a]
+evenMultiples multLen xs = take numToTake xs
   where
-    sortedSides = sort $ map strToInt $ words str
-    makeTriangle (a:b:c:excessSides) = if null excessSides
-                                          then Triangle a b c
-                                          else error "too many sides!"
-    makeTriangle _                   = error "you can only make a triangle with exactly 3 sides"
-
-strToInt s = read s::Int
+    numToTake = multLen * (length xs) `div` multLen
