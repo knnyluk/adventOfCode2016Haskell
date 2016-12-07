@@ -6,7 +6,7 @@ import Data.Monoid
 import Control.Arrow
 
 main :: IO ()
-main = print . foldr helper 0 . lines =<< readFile "/Users/jasonstolaruk/Dropbox (Personal)/Code/Haskell/input.txt"
+main = print . foldr helper 0 . lines =<< readFile "input.txt"
 
 helper :: String -> Int -> Int
 helper xs acc = let (roomName, rest    ) = break isDigit xs
