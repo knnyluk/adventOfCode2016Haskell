@@ -1,5 +1,3 @@
-
-
 main = do
   input <- readFile "input.txt"
   putStr "Uncompressed string length: "
@@ -11,7 +9,7 @@ type NestedExpressions = [CompExp]
 data CompExp = TermExp Multiplier SubSequence | WrappingExp Multiplier NestedExpressions deriving (Show)
 
 sumExpressions :: NestedExpressions -> Int
-sumExpressions xs = foldr f 0 xs
+sumExpressions = foldr f 0
   where
     f (WrappingExp mult exps) acc = acc + mult * sumExpressions exps
     f (TermExp mult seq) acc = acc + mult * (length seq)
