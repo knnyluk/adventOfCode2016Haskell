@@ -12,7 +12,7 @@ sumExpressions :: NestedExpressions -> Int
 sumExpressions = foldr f 0
   where
     f (WrappingExp mult exps) acc = acc + mult * sumExpressions exps
-    f (TermExp mult seq) acc = acc + mult * (length seq)
+    f (TermExp mult seq) acc      = acc + mult * length seq
 
 parseExpressions :: String -> NestedExpressions
 parseExpressions [] = []
@@ -24,7 +24,7 @@ parseExpressions xs = if null prefix
     mainExp = if '(' `elem` repSeq
                 then WrappingExp (read multiplier) (parseExpressions repSeq)
                 else TermExp (read multiplier) repSeq
-    (prefix, rest1) = span (/= '(') xs
-    (len, rest2) = if null rest1 then ("0",[]) else span (/= 'x') $ tail rest1
-    (multiplier, rest3) = if null rest2 then ("0",[]) else span (/= ')') $ tail rest2
+    (prefix, rest1)       = span (/= '(') xs
+    (len, rest2)          = if null rest1 then ("0",[]) else span (/= 'x') $ tail rest1
+    (multiplier, rest3)   = if null rest2 then ("0",[]) else span (/= ')') $ tail rest2
     (repSeq, unprocessed) = if null rest3 then ([],[]) else splitAt (read len) $ tail rest3
