@@ -11,21 +11,28 @@ countChars xs = foldr f 0 xs
     f x acc = acc + expLength x
 
 expLength :: Expression -> Int
-expLength (prefix, multiplier, repSeq, _) = (length prefix) + (length repSeq) * multiplier
+expLength (EndingExpression prefix rest) = (length prefix) + length rest
+expLength (NestedExpression prefix multiplier nestedExp rest) = (length prefix) + (expLength nestedExp) * multiplier
 
-flattenExpression :: Expression -> String
-flattenExpression (prefix, multiplier, repSeq, _) = concat $ prefix:replicate multiplier repSeq
+--flattenExpression :: Expression -> String
+--flattenExpression (prefix, multiplier, repSeq, _) = concat $ prefix:replicate multiplier repSeq
 
 stringToExpressions :: String -> [Expression]
 stringToExpressions [] = []
-stringToExpressions xs = exp:stringToExpressions rest
+stringToExpressions xs = exp:(stringToExpressions $ getRest exp)
   where
-    exp@(_,_,_,rest) = parseExpression xs
+    exp = parseExpression xs
 
-type Expression = (String, Int, String, String)
+getRest :: Expression -> String
+getRest (EndingExpression _ rest) = rest
+getRest (NestedExpression _ _ _ rest) = rest
+
+data Expression = EndingExpression String String| NestedExpression String Int Expression String deriving (Show)
 
 parseExpression :: String -> Expression
-parseExpression xs = (prefix, read multiplier, repSeq, rest4)
+parseExpression xs = if multiplier /= "0"
+                       then NestedExpression prefix (read multiplier) (parseExpression repSeq) rest4
+                       else EndingExpression prefix rest4
   where
     (prefix, rest1) = span (/= '(') xs
     (len, rest2) = if null rest1 then ("0",[]) else span (/= 'x') $ tail rest1
