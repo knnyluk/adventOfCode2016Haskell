@@ -1,30 +1,37 @@
+inputFileName = "input.txt"
+noMultiplier = 1
+
 main = do
-  input <- readFile "input.txt"
-  putStr "Uncompressed string length: "
-  putStrLn . show . sumExpressions $ parseExpressions input
+  input <- readFile inputFileName
+  putStr $ "Uncompressed string length for file: " ++ inputFileName ++ " is "
+  putStrLn . show . calculateExpressionLength $ parseExpressions input
 
-type Multiplier = Int
-type SubSequence = String
-type NestedExpressions = [CompExp]
-data CompExp = TermExp Multiplier SubSequence | WrappingExp Multiplier NestedExpressions deriving (Show)
+type Multiplier           = Int
+data CompressedExpression = TerminalExp Multiplier String | WrappingExp Multiplier NestedExpressions deriving (Show)
+type NestedExpressions    = [CompressedExpression]
 
-sumExpressions :: NestedExpressions -> Int
-sumExpressions = foldr f 0
-  where
-    f (WrappingExp mult exps) acc = acc + mult * sumExpressions exps
-    f (TermExp mult seq) acc      = acc + mult * length seq
+buildCompressedExpression :: Multiplier -> String -> CompressedExpression
+buildCompressedExpression multiplier repSeq = if '(' `elem` repSeq
+                                                then WrappingExp multiplier $ parseExpressions repSeq
+                                                else TerminalExp multiplier repSeq
 
 parseExpressions :: String -> NestedExpressions
 parseExpressions [] = []
 parseExpressions xs = if null prefix
-                        then mainExp:parseExpressions unprocessed
-                        else (TermExp 1 prefix
-                             ):mainExp:parseExpressions unprocessed
+                        then mainExp:parseExpressions remainingUnprocessedStr
+                        else leadingExp:mainExp:parseExpressions remainingUnprocessedStr
   where
-    mainExp = if '(' `elem` repSeq
-                then WrappingExp (read multiplier) (parseExpressions repSeq)
-                else TermExp (read multiplier) repSeq
-    (prefix, rest1)       = span (/= '(') xs
-    (len, rest2)          = if null rest1 then ("0",[]) else span (/= 'x') $ tail rest1
-    (multiplier, rest3)   = if null rest2 then ("0",[]) else span (/= ')') $ tail rest2
-    (repSeq, unprocessed) = if null rest3 then ([],[]) else splitAt (read len) $ tail rest3
+    leadingExp                            = buildCompressedExpression noMultiplier prefix
+    mainExp                               = buildCompressedExpression (read multiplier) repSeq
+    (prefix, rst1)                        = span (/= '(') xs
+    (repSeqLength, rst2)                  = splitOnAndExclude 'x' rst1 ("0",[])
+    (multiplier, rst3)                    = splitOnAndExclude ')' rst2 ("0",[])
+    (repSeq, remainingUnprocessedStr)     = if null rst3 then ([],[]) else splitAt (read repSeqLength) $ tail rst3
+    splitOnAndExclude _ [] fallbackReturn = fallbackReturn
+    splitOnAndExclude charToSplitOn str _ = span (/= charToSplitOn) $ tail str
+
+calculateExpressionLength :: NestedExpressions -> Int
+calculateExpressionLength = foldr f 0
+  where
+    f (WrappingExp mult exps) acc = acc + mult * calculateExpressionLength exps
+    f (TerminalExp mult seq) acc  = acc + mult * length seq
